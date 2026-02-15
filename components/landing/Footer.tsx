@@ -36,7 +36,6 @@ export default function Footer() {
                             <li><Link href="/shop" className="text-foreground/70 hover:text-primary transition-colors">All Products</Link></li>
                             <li><Link href="/shop?category=grains" className="text-foreground/70 hover:text-primary transition-colors">Grains</Link></li>
                             <li><Link href="/shop?category=cereals" className="text-foreground/70 hover:text-primary transition-colors">Cereals</Link></li>
-                            <li><Link href="/shop?category=flour" className="text-foreground/70 hover:text-primary transition-colors">Flour</Link></li>
                         </ul>
                     </div>
 
@@ -45,15 +44,15 @@ export default function Footer() {
                         <h4 className="font-serif text-lg text-foreground mb-6">Company</h4>
                         <ul className="space-y-4">
                             <li><Link href="/about" className="text-foreground/70 hover:text-primary transition-colors">Our Story</Link></li>
-                            <li><Link href="/sustainability" className="text-foreground/70 hover:text-primary transition-colors">Sustainability</Link></li>
+                            {/* <li><Link href="/sustainability" className="text-foreground/70 hover:text-primary transition-colors">Sustainability</Link></li>
                             <li><Link href="/careers" className="text-foreground/70 hover:text-primary transition-colors">Careers</Link></li>
-                            <li><Link href="/contact" className="text-foreground/70 hover:text-primary transition-colors">Contact Us</Link></li>
+                            <li><Link href="/contact" className="text-foreground/70 hover:text-primary transition-colors">Contact Us</Link></li> */}
                         </ul>
                     </div>
 
                     {/* Newsletter */}
                     <div>
-                        <h4 className="font-serif text-lg text-foreground mb-6">Stay in the Glow</h4>
+                        <h4 className="font-serif text-lg text-foreground mb-6">Farm Fresh News</h4>
                         <p className="text-foreground/70 mb-4">
                             Subscribe to receive updates, access to exclusive deals, and more.
                         </p>
