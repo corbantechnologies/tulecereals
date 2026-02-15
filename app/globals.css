@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --font-serif: var(--font-playfair);
+  --font-sans: var(--font-geist-sans);
+}
+
+:root {
+  /* Warm Oatmeal Background */
+  --background: #FEFAE0; 
+  /* Deep Earthy Brown for text */
+  --foreground: #283618;
+
+  /* Earthy Brown/Orange */
+  --primary: #BC6C25;
+  --primary-foreground: #FFFFFF;
+
+  /* Soft Beige / Wheat */
+  --secondary: #DDA15E;
+  --secondary-foreground: #283618;
+
+  /* Moss Green Accent */
+  --accent: #606C38;
+  --accent-foreground: #FFFFFF;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom utility for the elegant/classic look */
+.font-serif {
+  font-family: var(--font-serif), serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif), serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}

@@ -1,0 +1,12 @@
+<svg width="500" height="500" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+  <rect width="500" height="500" fill="transparent"/>
+  <circle cx="250" cy="250" r="200" stroke="#BC6C25" stroke-width="20" fill="none"/>
+  <path d="M250 100 Q 300 250 250 400" stroke="#606C38" stroke-width="15" fill="none"/>
+  <path d="M250 100 Q 200 250 250 400" stroke="#606C38" stroke-width="15" fill="none"/>
+  <circle cx="250" cy="100" r="20" fill="#DDA15E"/>
+  <circle cx="250" cy="150" r="20" fill="#DDA15E"/>
+  <circle cx="250" cy="200" r="20" fill="#DDA15E"/>
+  <circle cx="250" cy="250" r="20" fill="#DDA15E"/>
+  <circle cx="250" cy="300" r="20" fill="#DDA15E"/>
+  <text x="50%" y="90%" text-anchor="middle" font-family="serif" font-size="60" fill="#283618">Tule Cereals</text>
+</svg>
