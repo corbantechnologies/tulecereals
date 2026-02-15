@@ -6,10 +6,13 @@ export default function AboutPage() {
     return (
         <main className="min-h-screen bg-background">
             {/* Hero Section */}
-            <section className="relative h-[400px] flex items-center justify-center bg-secondary/20 overflow-hidden">
-                <div className="absolute inset-0 z-0">
-                    <Image src="/images/hero.svg" alt="Field of grains" fill className="object-cover opacity-50" />
+            <section className="relative h-[400px] flex items-center justify-center bg-secondary/30 overflow-hidden">
+                {/* Abstract Background Pattern */}
+                <div className="absolute inset-0 z-0 opacity-10">
+                    <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary via-transparent to-transparent" />
+                    <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-accent/20 rounded-full blur-3xl" />
                 </div>
+
                 <div className="relative z-10 text-center px-4">
                     <h1 className="text-4xl md:text-6xl font-serif text-foreground mb-4">Our Story</h1>
                     <p className="text-lg text-foreground/80 max-w-2xl mx-auto">
