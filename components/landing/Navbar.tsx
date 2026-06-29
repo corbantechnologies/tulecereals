@@ -16,11 +16,14 @@ import { useSession, signOut } from "next-auth/react";
 import { useFetchCategories } from "@/hooks/categories/actions";
 import CartDrawer from "../cart/CartDrawer";
 import { useCart } from "@/context/CartContext";
+import { usePathname } from "next/navigation"; // Added to track active paths
 
 export default function Navbar() {
   const { data: session } = useSession();
   const { data: categories } = useFetchCategories();
   const { cart } = useCart();
+  const pathname = usePathname(); // Instantiate active route reader
+  
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [isMobileShopOpen, setIsMobileShopOpen] = useState(false);
@@ -30,6 +33,16 @@ export default function Navbar() {
     cart?.items.reduce((acc, item) => acc + item.quantity, 0) || 0;
 
   const activeCategories = categories?.filter((c) => c.is_active) || [];
+
+  const navigationLinks = [
+    { label: "Our Story", href: "/about" },
+    { label: "Contact", href: "/contact" },
+    { label: "Orders", href: "/orders" },
+  ];
+
+  // Logic to determine if a route or shop path is currently active
+  const isActiveRoute = (href: string) => pathname === href;
+  const isShopActive = pathname?.startsWith("/shop");
 
   return (
     <>
@@ -47,7 +60,11 @@ export default function Navbar() {
           <div className="hidden md:flex items-center space-x-8">
             <Link
               href="/"
-              className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm px-1"
+              className={`text-sm font-medium transition-colors relative py-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm px-1 ${
+                isActiveRoute("/") 
+                  ? "text-primary after:absolute after:bottom-0 after:left-1 after:right-1 after:h-0.5 after:bg-primary" 
+                  : "text-foreground/80 hover:text-primary"
+              }`}
             >
               Home
             </Link>
@@ -59,7 +76,11 @@ export default function Navbar() {
               onMouseLeave={() => setIsShopOpen(false)}
             >
               <button
-                className="flex items-center text-sm font-medium text-foreground/80 hover:text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm px-1"
+                className={`flex items-center text-sm font-medium transition-colors relative py-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm px-1 ${
+                  isShopActive 
+                    ? "text-primary after:absolute after:bottom-0 after:left-1 after:right-1 after:h-0.5 after:bg-primary" 
+                    : "text-foreground/80 hover:text-primary"
+                }`}
                 aria-expanded={isShopOpen}
                 onClick={() => setIsShopOpen(!isShopOpen)}
               >
@@ -70,7 +91,6 @@ export default function Navbar() {
               {isShopOpen && (
                 <div className="absolute top-full left-0 w-64 pt-2 animate-in fade-in duration-200">
                   <div className="bg-white rounded-sm shadow-sm border border-secondary/30 overflow-hidden">
-                    {/* Shop All Link */}
                     <div className="group/cat relative">
                       <Link
                         href="/shop"
@@ -122,32 +142,24 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Added Desktop Links */}
-            <Link
-              href="/about"
-              className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm px-1"
-            >
-              Our Story
-            </Link>
-
-            <Link
-              href="/contact"
-              className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm px-1"
-            >
-              Contact
-            </Link>
-
-            <Link
-              href="/orders"
-              className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm px-1"
-            >
-              Orders
-            </Link>
+            {/* Desktop Links with Active Highlights */}
+            {navigationLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`text-sm font-medium transition-colors relative py-1 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm px-1 ${
+                  isActiveRoute(link.href)
+                    ? "text-primary after:absolute after:bottom-0 after:left-1 after:right-1 after:h-0.5 after:bg-primary"
+                    : "text-foreground/80 hover:text-primary"
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
 
           {/* Icons & Mobile Toggle */}
           <div className="flex items-center space-x-4 md:space-x-6">
-            {/* User Dropdown or Login Link (Desktop) */}
             <UserMenu />
 
             <button
@@ -203,20 +215,24 @@ export default function Navbar() {
                 </button>
               </div>
 
-              <div className="flex flex-col space-y-6 text-lg">
+              <div className="flex flex-col space-y-4 text-lg">
                 <Link
                   href="/"
-                  className="text-foreground hover:text-primary transition-colors py-2 border-b border-secondary/20"
+                  className={`py-2 border-b border-secondary/10 transition-colors flex items-center ${
+                    isActiveRoute("/") ? "text-primary font-semibold pl-2 border-l-2 border-primary" : "text-foreground"
+                  }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Home
                 </Link>
 
-                {/* Mobile Shop Section */}
+                {/* Mobile Shop Dropdown Element */}
                 <div>
                   <button
                     onClick={() => setIsMobileShopOpen(!isMobileShopOpen)}
-                    className="flex w-full items-center justify-between text-foreground font-medium py-2 border-b border-secondary/20 mb-2"
+                    className={`flex w-full items-center justify-between font-medium py-2 border-b border-secondary/10 mb-2 transition-colors ${
+                      isShopActive ? "text-primary pl-2 border-l-2 border-primary" : "text-foreground"
+                    }`}
                   >
                     Shop
                     <ChevronDown
@@ -227,6 +243,13 @@ export default function Navbar() {
                   </button>
                   {isMobileShopOpen && (
                     <div className="pl-4 flex flex-col space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <Link
+                        href="/shop"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="text-base text-foreground/90 font-medium"
+                      >
+                        Shop All
+                      </Link>
                       {activeCategories.map((category) => (
                         <div key={category.reference}>
                           <Link
@@ -260,14 +283,19 @@ export default function Navbar() {
                   )}
                 </div>
 
-                {["Our Story", "Contact", "Orders"].map((item) => (
+                {/* Mobile Active Links */}
+                {navigationLinks.map((link) => (
                   <Link
-                    key={item}
-                    href={`/${item.toLowerCase().replace(" ", "-")}`}
-                    className="text-foreground hover:text-primary transition-colors py-2 border-b border-secondary/20"
+                    key={link.href}
+                    href={link.href}
+                    className={`py-2 border-b border-secondary/10 transition-colors flex items-center ${
+                      isActiveRoute(link.href) 
+                        ? "text-primary font-semibold pl-2 border-l-2 border-primary" 
+                        : "text-foreground"
+                    }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    {item}
+                    {link.label}
                   </Link>
                 ))}
                 
@@ -275,7 +303,9 @@ export default function Navbar() {
                   <>
                     <Link
                       href="/account"
-                      className="text-foreground hover:text-primary transition-colors py-2 flex items-center gap-2"
+                      className={`py-2 flex items-center gap-2 transition-colors ${
+                        isActiveRoute("/account") ? "text-primary font-semibold" : "text-foreground"
+                      }`}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       <User className="w-5 h-5" /> Profile
@@ -293,7 +323,9 @@ export default function Navbar() {
                 ) : (
                   <Link
                     href="/login"
-                    className="text-foreground hover:text-primary transition-colors py-2 flex items-center gap-2"
+                    className={`py-2 flex items-center gap-2 transition-colors ${
+                      isActiveRoute("/login") ? "text-primary font-semibold" : "text-foreground"
+                    }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <User className="w-5 h-5" /> Login / Register
