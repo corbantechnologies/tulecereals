@@ -70,7 +70,7 @@ export default function Navbar() {
               {isShopOpen && (
                 <div className="absolute top-full left-0 w-64 pt-2 animate-in fade-in duration-200">
                   <div className="bg-white rounded-sm shadow-sm border border-secondary/30 overflow-hidden">
-                    {/* Add a "Shop All" link at the top */}
+                    {/* Shop All Link */}
                     <div className="group/cat relative">
                       <Link
                         href="/shop"
@@ -91,9 +91,8 @@ export default function Navbar() {
                               className="block px-4 py-2 text-sm text-foreground hover:bg-secondary/5 hover:text-primary transition-colors font-medium flex justify-between items-center"
                             >
                               {category.name}
-                              {/* If we had submenus here, we'd add an arrow */}
                             </Link>
-                            {/* Subcategories (Simple list under category for now, or mega menu style if preferred) */}
+                            {/* Subcategories */}
                             {category.subcategories &&
                               category.subcategories.length > 0 && (
                                 <div className="pl-4 pb-2 bg-secondary/5">
@@ -102,7 +101,7 @@ export default function Navbar() {
                                     .map((sub) => (
                                       <Link
                                         key={sub.reference}
-                                        href={`/shop?subcategory=${sub.reference}`} // Adjusted route to use query param
+                                        href={`/shop?subcategory=${sub.reference}`}
                                         className="block px-4 py-1.5 text-xs text-foreground/70 hover:text-primary transition-colors"
                                       >
                                         {sub.name}
@@ -122,6 +121,28 @@ export default function Navbar() {
                 </div>
               )}
             </div>
+
+            {/* Added Desktop Links */}
+            <Link
+              href="/about"
+              className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm px-1"
+            >
+              Our Story
+            </Link>
+
+            <Link
+              href="/contact"
+              className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm px-1"
+            >
+              Contact
+            </Link>
+
+            <Link
+              href="/orders"
+              className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm px-1"
+            >
+              Orders
+            </Link>
           </div>
 
           {/* Icons & Mobile Toggle */}
@@ -199,8 +220,9 @@ export default function Navbar() {
                   >
                     Shop
                     <ChevronDown
-                      className={`w-4 h-4 transition-transform duration-200 ${isMobileShopOpen ? "rotate-180" : ""
-                        }`}
+                      className={`w-4 h-4 transition-transform duration-200 ${
+                        isMobileShopOpen ? "rotate-180" : ""
+                      }`}
                     />
                   </button>
                   {isMobileShopOpen && (
@@ -238,7 +260,7 @@ export default function Navbar() {
                   )}
                 </div>
 
-                {["Our Story", "Contact"].map((item) => (
+                {["Our Story", "Contact", "Orders"].map((item) => (
                   <Link
                     key={item}
                     href={`/${item.toLowerCase().replace(" ", "-")}`}
@@ -248,6 +270,7 @@ export default function Navbar() {
                     {item}
                   </Link>
                 ))}
+                
                 {session ? (
                   <>
                     <Link
