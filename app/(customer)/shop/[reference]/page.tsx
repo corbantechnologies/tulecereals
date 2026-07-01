@@ -16,11 +16,8 @@ export default function ProductDetailsPage({
 }: {
   params: Promise<{ reference: string }>;
 }) {
-  // Unwrap params using React.use()
   const resolvedParams = use(params);
-  const { data: product, isLoading } = useFetchProduct(
-    resolvedParams.reference,
-  );
+  const { data: product, isLoading } = useFetchProduct(resolvedParams.reference);
   const { data: allProducts } = useFetchProducts();
   const { addToCart, isLoading: isAddingToCart } = useCart();
 
@@ -46,6 +43,20 @@ export default function ProductDetailsPage({
 
   const { variants, images } = product;
   const hasMultipleVariants = variants.length > 1;
+
+  // Compute a clean, dynamic price range if there are multiple variants
+  const getPriceRangeDisplay = () => {
+    if (!variants || variants.length === 0) return "";
+    
+    const prices = variants.map((v) => parseFloat(v.price.toString()));
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+
+    if (minPrice === maxPrice) {
+      return formatCurrency(minPrice, product.shop_details.currency);
+    }
+    return `${formatCurrency(minPrice, product.shop_details.currency)} - ${formatCurrency(maxPrice, product.shop_details.currency)}`;
+  };
 
   // Filter related products
   const relatedProducts =
@@ -75,13 +86,23 @@ export default function ProductDetailsPage({
     });
   };
 
+  // Row selection helper to bump variant quantity to 1 easily on click
+  const handleRowClick = (variantSku: string, maxStock: number) => {
+    if (maxStock <= 0) return;
+    setQuantities((prev) => {
+      if (!prev[variantSku] || prev[variantSku] === 0) {
+        return { ...prev, [variantSku]: 1 };
+      }
+      return prev;
+    });
+  };
+
   // Handle Global Quantity Change
   const handleGlobalQuantityChange = (delta: number, maxStock: number) => {
     setGlobalQuantity((prev) => Math.max(1, Math.min(prev + delta, maxStock)));
   };
 
   const handleMultiAddToCart = async () => {
-    // Use SKU for filter and map
     const variantsToAdd = variants.filter((v) => (quantities[v.sku] || 0) > 0);
 
     if (variantsToAdd.length === 0) {
@@ -90,13 +111,11 @@ export default function ProductDetailsPage({
     }
 
     try {
-      // Use v.sku
       await Promise.all(
         variantsToAdd.map((v) =>
           addToCart({
             variant_sku: v.sku,
             quantity: quantities[v.sku],
-            // Extra details for guest cart
             variant_name: v.product_name || product.name,
             variant_image: mainImage,
             variant_price: parseFloat(v.price.toString()),
@@ -194,9 +213,8 @@ export default function ProductDetailsPage({
               {!hasMultipleVariants && variants.length > 0 ? (
                 formatCurrency(variants[0].price, product.shop_details.currency)
               ) : (
-                <span>
-                  {/* Logic to show price range if needed */}
-                  See prices below
+                <span className="text-xl tracking-tight text-foreground/90 font-sans">
+                  {getPriceRangeDisplay()}
                 </span>
               )}
             </div>
@@ -228,13 +246,15 @@ export default function ProductDetailsPage({
                     const variantName =
                       Object.values(variant.attributes).join(" - ") ||
                       variant.product_name;
-                    // Use SKU for quantity lookup
                     const qty = quantities[variant.sku] || 0;
 
                     return (
                       <div
-                        key={variant.sku} // Use SKU as key
-                        className="grid grid-cols-12 gap-4 items-center py-2 border-b border-border/10 last:border-0"
+                        key={variant.sku}
+                        onClick={() => handleRowClick(variant.sku, variant.stock)}
+                        className={`grid grid-cols-12 gap-4 items-center py-2.5 border-b border-border/10 last:border-0 cursor-pointer transition-colors ${
+                          qty > 0 ? "bg-primary/5 px-2 -mx-2 rounded-sm" : "hover:bg-secondary/5"
+                        }`}
                       >
                         <div className="col-span-6">
                           <p className="font-medium text-sm text-foreground">
@@ -252,13 +272,13 @@ export default function ProductDetailsPage({
                             product.shop_details.currency,
                           )}
                         </div>
-                        <div className="col-span-3 flex justify-end">
+                        <div className="col-span-3 flex justify-end" onClick={(e) => e.stopPropagation()}>
                           {variant.stock > 0 ? (
-                            <div className="flex items-center border border-border rounded-md">
+                            <div className="flex items-center border border-border rounded-md bg-background">
                               <button
                                 onClick={() =>
                                   handleVariantQuantityChange(
-                                    variant.sku, // Use SKU
+                                    variant.sku,
                                     -1,
                                     variant.stock,
                                   )
@@ -268,16 +288,13 @@ export default function ProductDetailsPage({
                               >
                                 <Minus className="w-3 h-3" />
                               </button>
-                              <input
-                                type="text"
-                                value={qty}
-                                readOnly
-                                className="w-8 text-center text-sm bg-transparent border-none focus:ring-0 p-0"
-                              />
+                              <span className="w-8 text-center text-sm font-medium select-none">
+                                {qty}
+                              </span>
                               <button
                                 onClick={() =>
                                   handleVariantQuantityChange(
-                                    variant.sku, // Use SKU
+                                    variant.sku,
                                     1,
                                     variant.stock,
                                   )
@@ -307,12 +324,12 @@ export default function ProductDetailsPage({
                   {isAddingToCart ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
-                    "Add to Cart"
+                    "Add Selected to Cart"
                   )}
                 </button>
               </div>
             ) : (
-              // Simple Product View
+              /* Simple Product View */
               <div className="border-t border-border pt-6">
                 {variants[0] && (
                   <>
@@ -337,7 +354,7 @@ export default function ProductDetailsPage({
                           <label className="text-sm font-medium text-foreground">
                             Quantity:
                           </label>
-                          <div className="flex items-center border border-border rounded-md w-fit">
+                          <div className="flex items-center border border-border rounded-md w-fit bg-background">
                             <button
                               onClick={() =>
                                 handleGlobalQuantityChange(
@@ -350,12 +367,9 @@ export default function ProductDetailsPage({
                             >
                               <Minus className="w-4 h-4" />
                             </button>
-                            <input
-                              type="text"
-                              value={globalQuantity}
-                              readOnly
-                              className="w-12 text-center text-base bg-transparent border-none focus:ring-0 p-0 font-medium"
-                            />
+                            <span className="w-12 text-center text-base font-medium select-none">
+                              {globalQuantity}
+                            </span>
                             <button
                               onClick={() =>
                                 handleGlobalQuantityChange(1, variants[0].stock)
@@ -369,14 +383,12 @@ export default function ProductDetailsPage({
                         </div>
 
                         <AddToCartButton
-                          variantSKU={variants[0].sku} // Updated prop name
+                          variantSKU={variants[0].sku}
                           quantity={globalQuantity}
                           stock={variants[0].stock}
                           variantName={product.name}
                           variantImage={mainImage}
-                          variantPrice={parseFloat(
-                            variants[0].price.toString(),
-                          )}
+                          variantPrice={parseFloat(variants[0].price.toString())}
                           shopCurrency={product.shop_details.currency}
                         />
                       </div>
@@ -388,7 +400,7 @@ export default function ProductDetailsPage({
           </div>
         </div>
 
-        {/* We Think You'll Love This */}
+        {/* Related Items Section */}
         {relatedProducts.length > 0 && (
           <div className="mt-12 md:mt-20 border-t border-border pt-12">
             <h2 className="text-2xl md:text-3xl font-serif font-medium text-foreground mb-8">

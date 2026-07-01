@@ -1,10 +1,8 @@
-"use client"
+"use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { Star, Loader2 } from "lucide-react";
+import { Loader2, ShoppingBag } from "lucide-react";
 import { useFetchProducts } from "@/hooks/products/actions";
-import { formatCurrency } from "@/components/dashboard/utils";
 import ProductCard from "../products/ProductCard";
 
 export default function ProductGrid() {
@@ -12,8 +10,9 @@ export default function ProductGrid() {
 
   // Filter products that have images and are active
   const displayProducts =
-    products?.filter((p) => p.is_active && p.images.length > 0).slice(0, 8) ||
-    []; // Limit to 8 products for the grid
+    products?.filter((p) => p.is_active && p.images && p.images.length > 0).slice(0, 8) || [];
+
+  const hasNoProducts = displayProducts.length === 0;
 
   return (
     <section className="bg-white py-16 md:py-20">
@@ -32,14 +31,28 @@ export default function ProductGrid() {
           <div className="flex justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
+        ) : hasNoProducts ? (
+          /* Empty State Block */
+          <div className="flex flex-col items-center justify-center text-center py-16 px-4 animate-in fade-in duration-300">
+            <div className="w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mb-4 border border-secondary/20">
+              <ShoppingBag className="w-6 h-6 text-muted-foreground/60" />
+            </div>
+            <h3 className="text-lg font-medium text-foreground mb-1">
+              No products available yet
+            </h3>
+            <p className="text-sm text-muted-foreground max-w-sm">
+              We are currently updating our inventory. Check back shortly to discover our fresh batches!
+            </p>
+          </div>
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-10 md:gap-x-8 md:gap-y-12">
-            {displayProducts.map((product) => {
-              return <ProductCard key={product.reference} product={product} />;
-            })}
+            {displayProducts.map((product) => (
+              <ProductCard key={product.reference} product={product} />
+            ))}
           </div>
         )}
 
+        {/* Footer link stays visible regardless of internal state loading */}
         <div className="text-center mt-12">
           <Link
             href="/shop"
