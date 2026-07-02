@@ -1,9 +1,8 @@
 "use client";
 
-import { Mail, Phone, MapPin, Send, Loader2, Lock } from "lucide-react";
+import { Mail, Phone, MapPin, Send, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { saveContactMessage } from "@/hooks/contact/actions";
-import Link from "next/link";
 
 interface FormState {
   firstName: string;
@@ -13,9 +12,6 @@ interface FormState {
 }
 
 export default function ContactPage() {
-  // Replace this with your actual auth hook (e.g., useSession() from next-auth or useAuth() from Clerk)
-  const isLoggedIn = false; // Toggle to true to test the form layout
-
   const [formData, setFormData] = useState<FormState>({
     firstName: "",
     lastName: "",
@@ -35,11 +31,6 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isLoggedIn) {
-      setError("You must be logged in to perform this action.");
-      return;
-    }
-
     setIsSubmitting(true);
     setError(null);
 
@@ -100,7 +91,6 @@ export default function ContactPage() {
                 </div>
               </div>
 
-
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-full bg-secondary/20 flex items-center justify-center flex-shrink-0">
                   <MapPin className="w-5 h-5 text-primary" />
@@ -114,28 +104,9 @@ export default function ContactPage() {
             </div>
           </div>
 
-          {/* Form / Auth Guard State Container */}
+          {/* Form State Container */}
           <div className="bg-white p-8 md:p-10 rounded-sm shadow-sm border border-secondary/20 flex flex-col justify-center min-h-[400px]">
-            {!isLoggedIn ? (
-              /* Unauthorized Guard View */
-              <div className="text-center py-8 animate-in fade-in duration-300">
-                <div className="w-14 h-14 bg-secondary/20 rounded-full flex items-center justify-center mx-auto mb-5">
-                  <Lock className="w-6 h-6 text-foreground/70" />
-                </div>
-                <h3 className="text-xl font-serif text-foreground mb-2">
-                  Authentication Required
-                </h3>
-                <p className="text-foreground/60 max-w-sm mx-auto mb-8 text-sm leading-relaxed">
-                  To maintain data security and avoid automated spam, please sign in to your account to send us a direct message.
-                </p>
-                <Link
-                  href="/login"
-                  className="inline-block bg-primary text-primary-foreground font-medium py-3 px-8 rounded-sm hover:bg-primary/90 transition-colors shadow-sm text-sm"
-                >
-                  Sign In to Account
-                </Link>
-              </div>
-            ) : submitted ? (
+            {submitted ? (
               /* Success State */
               <div className="text-center py-12 animate-in fade-in duration-300">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -153,7 +124,7 @@ export default function ContactPage() {
                 </button>
               </div>
             ) : (
-              /* Authenticated Form View */
+              /* Public Form View */
               <form onSubmit={handleSubmit} className="space-y-6">
                 {error && (
                   <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-sm">

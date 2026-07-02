@@ -14,6 +14,8 @@ declare module "next-auth" {
       is_vendor?: boolean;
       is_customer?: boolean;
       is_superuser?: boolean;
+      is_pos_staff?: boolean;
+      pos_shop?: string;
     } & DefaultSession["user"];
   }
 
@@ -26,6 +28,8 @@ declare module "next-auth" {
     is_vendor?: boolean;
     is_customer?: boolean;
     is_superuser?: boolean;
+    is_pos_staff?: boolean;
+    pos_shop?: string;
   }
 }
 
