@@ -16,12 +16,12 @@ export interface Cart {
   updated_at: string;
 }
 
-interface checkoutCart {
-  delivery_type: string;
-  pickup_station: string;
-  shipping_zone: string;
-  shipping_address: string;
-  phone_number: string;
+export interface checkoutCartData {
+  delivery_type: "PICKUP" | "HOME";
+  pickup_station?: string; // station code
+  shipping_zone?: string; // zone code
+  shipping_address?: string;
+  phone_number: string; // pick the customer's number if available, else ask for it
 }
 
 export const getCart = async (headers: {
@@ -43,7 +43,7 @@ export interface CheckoutResponse {
 }
 
 export const checkoutCart = async (
-  data: checkoutCart,
+  data: checkoutCartData,
   headers: { headers: { Authorization: string } },
 ): Promise<CheckoutResponse> => {
   const response: AxiosResponse<CheckoutResponse> = await apiActions.post(
