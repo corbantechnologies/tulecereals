@@ -16,6 +16,7 @@ export interface User {
   county: string | null;
   town: string | null;
   is_staff: boolean;
+  is_pos_staff?: boolean;
   is_superuser: boolean;
   is_active: boolean;
   is_vendor: boolean;

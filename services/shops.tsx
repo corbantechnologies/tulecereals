@@ -28,6 +28,8 @@ export interface Shop {
   shipping_policy: string;
   refund_policy: string;
   categories: Category[];
+  tax_rate?: string;
+  loyalty_points_per_unit?: number;
 }
 
 export interface updateShop {
