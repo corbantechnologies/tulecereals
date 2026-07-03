@@ -18,9 +18,9 @@ export interface Cart {
 
 interface checkoutCart {
   delivery_type: string;
-  pickup_station?: string;
-  shipping_zone?: string;
-  shipping_address?: string;
+  pickup_station: string;
+  shipping_zone: string;
+  shipping_address: string;
   phone_number: string;
 }
 
