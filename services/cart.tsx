@@ -17,8 +17,11 @@ export interface Cart {
 }
 
 interface checkoutCart {
-  pickup_station: string; // station code
-  phone_number: string; // pick the customer's number if available, else ask for it
+  delivery_type: string;
+  pickup_station?: string;
+  shipping_zone?: string;
+  shipping_address?: string;
+  phone_number: string;
 }
 
 export const getCart = async (headers: {
