@@ -2,7 +2,10 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { checkoutCart } from "@/services/cart";
+import {
+  checkoutCart,
+  CheckoutCartPayload,
+} from "@/services/cart";
 import useAxiosAuth from "../authentication/useAxiosAuth";
 import toast from "react-hot-toast";
 
@@ -11,17 +14,26 @@ export const useCheckoutCart = () => {
   const header = useAxiosAuth();
 
   return useMutation({
-    mutationFn: (data: { pickup_station: string; phone_number: string }) =>
+    mutationFn: (data: CheckoutCartPayload) =>
       checkoutCart(data, header),
+
     onSuccess: (data) => {
-      console.log("Checkout successful, received data:", data);
+      console.log("Checkout successful:", data);
+
       queryClient.invalidateQueries({ queryKey: ["cart"] });
       queryClient.invalidateQueries({ queryKey: ["orders"] });
+
       toast.success("Order placed successfully!");
     },
+
     onError: (error: any) => {
-      toast.error("Failed to place order. Please try again.");
-      console.error(error);
+      console.error("Checkout Error:", error.response?.data || error);
+
+      toast.error(
+        error.response?.data?.message ||
+          error.response?.data?.detail ||
+          "Failed to place order."
+      );
     },
   });
 };

@@ -1,5 +1,8 @@
+"use client";
+
 import { useCart } from "@/context/CartContext";
-import { Loader2, ShoppingCart } from "lucide-react";
+import { Loader2, ShoppingCart, Check } from "lucide-react";
+import { useState } from "react";
 
 interface AddToCartButtonProps {
   variantSKU: string;
@@ -7,7 +10,6 @@ interface AddToCartButtonProps {
   stock: number;
   disabled?: boolean;
   className?: string;
-  // Details for Guest Cart
   variantName?: string;
   variantPrice?: number;
   variantImage?: string;
@@ -26,12 +28,10 @@ export default function AddToCartButton({
   shopCurrency,
 }: AddToCartButtonProps) {
   const { addToCart, isLoading } = useCart();
+  const [added, setAdded] = useState(false);
 
   const handleAddToCart = async () => {
-    if (!variantSKU) {
-      console.error("No variantSKU provided");
-      return;
-    }
+    if (!variantSKU) return;
     await addToCart({
       variant_sku: variantSKU,
       quantity,
@@ -40,6 +40,8 @@ export default function AddToCartButton({
       variant_image: variantImage,
       shop_currency: shopCurrency,
     });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
   };
 
   const isOutOfStock = stock <= 0;
@@ -49,14 +51,28 @@ export default function AddToCartButton({
     <button
       onClick={handleAddToCart}
       disabled={isDisabled}
-      className={`w-full bg-primary hover:bg-primary/90 text-primary-foreground py-4 rounded-md font-medium text-lg transition-colors flex items-center justify-center gap-2 ${className}`}
+      className={`w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-full text-sm font-semibold transition-all duration-200 ${
+        isOutOfStock
+          ? "bg-[#F5F5F7] text-[#86868B] cursor-not-allowed"
+          : added
+          ? "bg-green-500 text-white shadow-lg shadow-green-500/25"
+          : "bg-[#e38c00] text-white hover:bg-[#ed7e00] active:bg-[#e38409] shadow-lg shadow-[#0071E3]/25"
+      } disabled:opacity-60 ${className}`}
     >
       {isLoading ? (
-        <Loader2 className="w-5 h-5 animate-spin" />
+        <Loader2 className="w-4 h-4 animate-spin" />
+      ) : added ? (
+        <Check className="w-4 h-4" />
       ) : (
-        <ShoppingCart className="w-5 h-5" />
+        <ShoppingCart className="w-4 h-4" />
       )}
-      {isLoading ? "Adding..." : isOutOfStock ? "Out of Stock" : "Add to Cart"}
+      {isLoading
+        ? "Adding..."
+        : added
+        ? "Added to Cart!"
+        : isOutOfStock
+        ? "Out of Stock"
+        : "Add to Cart"}
     </button>
   );
 }

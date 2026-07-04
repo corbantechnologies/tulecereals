@@ -109,12 +109,14 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
               <p className="text-sm text-muted-foreground max-w-[240px] mx-auto">
                 Looks like you haven&apos;t added anything to your cart yet.
               </p>
-              <button
+              {/* CHANGED: Converted from a plain button to a Next.js Link pointing to /shop */}
+              <Link
+                href="/shop"
                 onClick={onClose}
-                className="mt-4 px-6 py-2 bg-primary text-primary-foreground rounded-sm text-sm font-medium hover:bg-primary/90 transition-colors"
+                className="inline-block mt-4 px-6 py-2 bg-primary text-primary-foreground rounded-sm text-sm font-medium hover:bg-primary/90 transition-colors"
               >
                 Start Shopping
-              </button>
+              </Link>
             </div>
           ) : (
             <div className="w-full space-y-1 self-start h-full">

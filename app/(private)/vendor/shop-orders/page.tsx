@@ -73,7 +73,7 @@ export default function ShopOrdersPage() {
                           className={`px-2 py-0.5 rounded-full text-[10px] uppercase tracking-tighter font-medium
                             ${
                               order.status === "PLACED"
-                                ? "bg-blue-100 text-blue-700"
+                                ? "bg-blue-100 text-amber-500"
                                 : order.status === "COMPLETED"
                                   ? "bg-green-100 text-green-700"
                                   : order.status === "CANCELLED"

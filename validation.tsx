@@ -31,7 +31,6 @@ const SignupSchema = Yup.object().shape({
     first_name: Yup.string().required("First name is required"),
     last_name: Yup.string().required("Last name is required"),
     email: Yup.string().email("Invalid email").required("Required"),
-    phone_number: Yup.string().required("Phone number is required"),
     country: Yup.string().required("Country is required"),
     password: Yup.string()
         .min(5, "Password cannot be less than 5 characters")
