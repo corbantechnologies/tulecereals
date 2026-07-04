@@ -400,7 +400,7 @@ export default function AnalyticsPage() {
             <select
               value={groupBy}
               onChange={(e) => setGroupBy(e.target.value)}
-              className="px-3 py-2 border border-[#D2D2D7] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0071E3]/30 focus:border-[#0071E3] transition-all bg-white min-w-[100px]"
+              className="px-3 py-2 border border-[#D2D2D7] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0071E3]/30 focus:border-[#d17d10] transition-all bg-white min-w-[100px]"
             >
               <option value="day">By Day</option>
               <option value="month">By Month</option>
@@ -410,7 +410,7 @@ export default function AnalyticsPage() {
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="px-3 py-2 border border-[#D2D2D7] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0071E3]/30 focus:border-[#0071E3] transition-all bg-white min-w-[140px]"
+              className="px-3 py-2 border border-[#D2D2D7] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0071E3]/30 focus:border-[#c07b33] transition-all bg-white min-w-[140px]"
             >
               <option value="today">Today</option>
               <option value="last_7_days">Last 7 Days</option>
