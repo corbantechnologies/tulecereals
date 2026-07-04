@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 "use client";
 
 import { apiActions } from "@/tools/axios";
@@ -16,12 +16,14 @@ export interface User {
   county: string | null;
   town: string | null;
   is_staff: boolean;
-  is_pos_staff?: boolean;
   is_superuser: boolean;
   is_active: boolean;
   is_vendor: boolean;
   is_customer: boolean;
+  is_pos_staff: boolean;
   shop: Shop | null;
+  pos_shop?: Shop | null;
+  assigned_shop_name?: string | null;
 }
 
 export interface updateUser {

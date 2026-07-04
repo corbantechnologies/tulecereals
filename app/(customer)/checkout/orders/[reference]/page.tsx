@@ -1,38 +1,30 @@
 "use client";
 
-import { generateDepositSTKPush } from "@/services/mpesa";
-import { useRouter } from "next/navigation";
-import { useState, use } from "react";
-import { useFetchOrder } from "@/hooks/orders/actions";
-import { formatCurrency } from "@/components/dashboard/utils";
-import {
-  Loader2,
-  CheckCircle2,
-  AlertCircle,
-  Lock,
-  ChevronLeft,
-  Smartphone,
-  Check,
-} from "lucide-react";
-import Link from "next/link";
-import { toast } from "react-hot-toast";
-import { Formik, Form, Field } from "formik";
+import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import { Loader2, ArrowLeft, Phone, CreditCard } from "lucide-react";
 import * as Yup from "yup";
-import { Button } from "@headlessui/react";
+import toast from "react-hot-toast";
 
-export default function OrderPaymentPage({
-  params,
-}: {
-  params: Promise<{ reference: string }>;
-}) {
+import { useFetchOrder } from "@/hooks/orders/actions";
+import { generateDepositSTKPush } from "@/services/mpesa";
+import { formatCurrency } from "@/components/dashboard/utils";
+
+export default function OrderPaymentPage() {
   const router = useRouter();
-  const { reference } = use(params);
-
-  const { data: order, isLoading, refetch } = useFetchOrder(reference);
-  const [isPolling, setIsPolling] = useState(false);
+  const { reference } = useParams() as { reference: string };
+  const [loading, setLoading] = useState(false);
   const [paymentMessage, setPaymentMessage] = useState("");
+  const [isPolling, setIsPolling] = useState(false);
 
-  const pollPaymentStatus = async () => {
+  const {
+    data: order,
+    isLoading: isLoadingOrder,
+    refetch: refetchOrder,
+  } = useFetchOrder(reference);
+
+  const pollPaymentStatus = async (currentRef: string) => {
     setIsPolling(true);
     const maxRetries = 24;
     let tries = 0;
@@ -40,35 +32,31 @@ export default function OrderPaymentPage({
     const interval = setInterval(async () => {
       tries++;
       try {
-        const result = await refetch();
+        const result = await refetchOrder();
         const currentStatus = result?.data?.payment_status;
 
-        if (currentStatus === "PAID" || currentStatus === "COMPLETED") {
+        if (currentStatus === "COMPLETED" || currentStatus === "PAID") {
           clearInterval(interval);
           setPaymentMessage("Payment Successful! Redirecting...");
           toast.success("Payment Received!");
           setTimeout(() => {
-            router.push(`/orders/${reference}?success=true`);
+            router.push(`/orders/${reference}`);
           }, 2000);
           setIsPolling(false);
-        } else if (
-          ["FAILED", "CANCELLED", "REVERSED"].includes(currentStatus || "")
-        ) {
+        } else if (typeof currentStatus === "string" && ["FAILED", "CANCELLED", "REVERSED"].includes(currentStatus)) {
           clearInterval(interval);
-          setPaymentMessage(
-            `Payment ${
-              currentStatus ? currentStatus.toLowerCase() : "failed"
-            }. Please try again.`,
-          );
-          toast.error(`Payment ${currentStatus || "failed"}`);
+          setPaymentMessage(`Payment ${currentStatus.toLowerCase()}. Please try again.`);
+          toast.error(`Payment ${currentStatus}`);
           setIsPolling(false);
+          setLoading(false);
         } else if (tries >= maxRetries) {
           clearInterval(interval);
           setPaymentMessage(
-            "Payment verification timed out. Please check your messages.",
+            "Payment verification timed out. Please check your messages. \n\nIf you received the confirmation message, please ignore this message."
           );
-          toast("Taking longer than expected...", { icon: "⏳" });
+          toast.error("Taking longer than expected...");
           setIsPolling(false);
+          setLoading(false);
         }
       } catch (e) {
         console.error("Polling error", e);
@@ -76,380 +64,175 @@ export default function OrderPaymentPage({
     }, 5000);
   };
 
-  if (isLoading && !order) {
+  if (isLoadingOrder && !isPolling) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FFF1F2]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#C27848]" />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50/50">
+        <Loader2 className="w-8 h-8 animate-spin text-[#e48c08]" />
       </div>
     );
   }
 
   if (!order) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center space-y-4 bg-[#FFF1F2]">
-        <AlertCircle className="w-16 h-16 text-red-400" />
-        <h1 className="text-2xl font-bold text-gray-900">Order Not Found</h1>
-        <Link
-          href="/shop"
-          className="text-[#C27848] hover:underline flex items-center gap-2"
-        >
-          <ChevronLeft className="w-4 h-4" /> Return to Shop
-        </Link>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50/50">
+        <div className="p-8 text-center text-gray-500">Order not found</div>
       </div>
     );
   }
-
-  const isPaid =
-    order.payment_status === "PAID" || order.payment_status === "COMPLETED";
-  const currency = "KES";
 
   const validationSchema = Yup.object().shape({
     phone_number: Yup.string()
       .required("Phone number is required")
       .matches(
         /^(2547|2541)\d{8}$/,
-        "Phone number must start with 2547 or 2541 and be 12 digits",
+        "Phone number must start with 2547 or 2541 and be 12 digits"
       ),
   });
 
   return (
-    <div className="min-h-screen bg-[#F9F7F2] py-8 md:py-12 px-4 md:px-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8 flex items-center justify-between">
-          <Link
-            href="/orders"
-            className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors group"
-          >
-            <ChevronLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform" />
-            Back to Orders
-          </Link>
-          <div className="flex items-center gap-2 text-xs font-medium text-green-700 bg-green-50 px-3 py-1 rounded-full border border-green-100">
-            <Lock className="w-3 h-3" /> Secure Checkout
+    <div className="min-h-screen bg-[#F5F5F7] py-12 px-4 flex items-center justify-center">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-[#D2D2D7]/60 overflow-hidden">
+        {/* Header */}
+        <div className="p-6 border-b border-[#D2D2D7]/60">
+          <div className="flex items-center gap-3 mb-2">
+            <button
+              onClick={() => router.push(`/orders/${reference}`)}
+              disabled={loading}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-50"
+            >
+              <ArrowLeft className="w-5 h-5 text-gray-600" />
+            </button>
+            <h1 className="text-2xl font-bold text-[#1D1D1F] flex items-center gap-2">
+              <CreditCard className="w-6 h-6 text-[#e19005]" />
+              Complete Payment
+            </h1>
           </div>
+          <p className="text-sm text-gray-500 ml-11">
+            Confirm your details to initiate M-Pesa payment
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* LEFT COLUMN: RECEIPT (Order Summary) */}
-          <div className="lg:col-span-5 space-y-6">
-            <div className="bg-white rounded-sm shadow-sm border border-secondary/20 overflow-hidden relative">
-              {/* Receipt Top Decoration */}
-              <div className="h-2 bg-primary/80 w-full" />
-
-              <div className="p-6 md:p-8">
-                <div className="text-center mb-8">
-                  <h1 className="text-2xl font-serif font-bold text-foreground mb-1">
-                    Order Receipt
-                  </h1>
-                  <p className="text-sm text-muted-foreground font-mono">
-                    #{order.reference.toUpperCase()}
-                  </p>
-                </div>
-
-                {/* Items List */}
-                <div className="space-y-4 mb-8">
-                  {order.items.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex justify-between items-start text-sm group"
-                    >
-                      <div className="flex gap-3">
-                        <span className="font-mono text-muted-foreground w-6 shrink-0 pt-0.5">
-                          {item.quantity}x
-                        </span>
-                        <div>
-                          <p className="font-medium text-foreground group-hover:text-primary transition-colors">
-                            {item.variant_sku}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate max-w-[180px]">
-                            {item.variant_sku}
-                          </p>
-                        </div>
-                      </div>
-                      <span className="font-medium text-foreground tabular-nums">
-                        {formatCurrency(parseFloat(item.price), currency)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Divider */}
-                <div className="border-t-2 border-dashed border-secondary/30 my-6 relative">
-                  <div className="absolute -left-10 -top-1.5 w-3 h-3 bg-[#F9F7F2] rounded-full" />
-                  <div className="absolute -right-10 -top-1.5 w-3 h-3 bg-[#F9F7F2] rounded-full" />
-                </div>
-
-                {/* Totals */}
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>Subtotal</span>
-                    <span className="tabular-nums">
-                      {formatCurrency(
-                        parseFloat(order.total_amount) -
-                          parseFloat(order.delivery_cost),
-                        currency,
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>Delivery</span>
-                    <span className="tabular-nums">
-                      {formatCurrency(
-                        parseFloat(order.delivery_cost),
-                        currency,
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center pt-4 text-base font-bold text-foreground border-t border-secondary/10 mt-4">
-                    <span>Total Due</span>
-                    <span className="text-xl font-serif text-primary tabular-nums">
-                      {formatCurrency(parseFloat(order.total_amount), currency)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Receipt Bottom Decoration */}
-              <div className="bg-[#F9F7F2] h-4 w-full relative -bottom-2">
-                <div
-                  className="absolute top-0 left-0 w-full h-full"
-                  style={{
-                    backgroundImage:
-                      "linear-gradient(45deg, transparent 33.333%, #F9F7F2 33.333%, #F9F7F2 66.667%, transparent 66.667%), linear-gradient(-45deg, transparent 33.333%, #F9F7F2 33.333%, #F9F7F2 66.667%, transparent 66.667%)",
-                    backgroundSize: "12px 24px",
-                    backgroundPosition: "0 0",
-                  }}
-                ></div>
-              </div>
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">Order Total</span>
+              <span className="font-bold text-[#1D1D1F]">
+                {formatCurrency(parseFloat(order.total_amount), "KES")}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">Reference</span>
+              <span className="font-mono text-[#1D1D1F]">#{order.reference}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">Status</span>
+              <span
+                className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                  order.payment_status === "COMPLETED" || order.payment_status === "PAID"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-yellow-100 text-yellow-800"
+                }`}
+              >
+                {order.payment_status || "PENDING"}
+              </span>
             </div>
           </div>
 
-          {/* RIGHT COLUMN: PAYMENT (Action) */}
-          <div className="lg:col-span-7">
-            <div className="bg-white rounded-sm shadow-md border border-secondary/20 p-6 md:p-10 relative overflow-hidden">
-              {/* Background Pattern */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/5 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+          {paymentMessage && (
+            <div
+              className={`p-4 rounded-xl text-sm text-center font-medium ${
+                paymentMessage.includes("Successful")
+                  ? "bg-green-50 text-green-700"
+                  : paymentMessage.includes("failed") ||
+                    paymentMessage.includes("timed out")
+                  ? "bg-red-50 text-red-700"
+                  : "bg-blue-50 text-[#e68e0b] animate-pulse"
+              }`}
+            >
+              {paymentMessage}
+            </div>
+          )}
 
-              {!isPaid ? (
-                <>
-                  <div className="mb-8">
-                    <h2 className="text-2xl font-serif font-bold text-foreground mb-2">
-                      Details & Payment
-                    </h2>
-                    <p className="text-muted-foreground text-sm">
-                      Complete your purchase securely via M-PESA.
-                    </p>
-                  </div>
-
-                  {/* Payment Methods */}
-                  <div className="mb-8">
-                    <label className="block text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-3">
-                      Payment Method
+          {!isPolling && order.payment_status !== "COMPLETED" && order.payment_status !== "PAID" && (
+            <Formik
+              initialValues={{
+                phone_number: order.phone_number || "",
+              }}
+              validationSchema={validationSchema}
+              onSubmit={async (values) => {
+                setLoading(true);
+                setPaymentMessage("Sending STK Push to your phone...");
+                try {
+                  const payload = {
+                    phone_number: parseInt(values.phone_number),
+                    order_reference: order.reference,
+                  };
+                  await generateDepositSTKPush(payload);
+                  setPaymentMessage(
+                    "STK Push sent! Please check your phone and enter your PIN."
+                  );
+                  toast.success("Prompt sent! Waiting for payment...");
+                  pollPaymentStatus(order.reference);
+                } catch (error: any) {
+                  console.error(error);
+                  const msg = error?.response?.data?.error || "Failed to initiate payment";
+                  toast.error(msg);
+                  setPaymentMessage(`${msg}. Please try again.`);
+                  setLoading(false);
+                }
+              }}
+            >
+              {({ errors, touched }) => (
+                <Form className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 block">
+                      M-Pesa Phone Number
                     </label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="relative group cursor-pointer border-2 border-primary bg-primary/5 rounded-sm p-4 flex items-center gap-3 transition-all">
-                        <div className="w-10 h-10 rounded-sm bg-white border border-secondary/20 flex items-center justify-center shrink-0">
-                          <Smartphone className="w-5 h-5 text-green-600" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-foreground text-sm">
-                            M-PESA
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Mobile Money
-                          </p>
-                        </div>
-                        <div className="absolute top-3 right-3 w-4 h-4 bg-primary rounded-full flex items-center justify-center text-white p-0.5 shadow-sm">
-                          <Check className="w-full h-full" />
-                        </div>
-                      </div>
-                      {/* Placeholder for Card/Other */}
-                      <div className="relative border border-secondary/30 rounded-sm p-4 flex items-center gap-3 opacity-50 cursor-not-allowed grayscale">
-                        <div className="w-10 h-10 rounded-sm bg-secondary/10 flex items-center justify-center shrink-0">
-                          <div className="w-5 h-3 border-2 border-muted-foreground rounded-sm" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground text-sm">
-                            Card
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Coming Soon
-                          </p>
-                        </div>
-                      </div>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Field
+                        type="tel"
+                        name="phone_number"
+                        placeholder="2547XXXXXXXX"
+                        className={`w-full pl-10 pr-4 py-3 bg-white border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0071E3]/30 focus:border-[#0071E3] transition-all ${
+                          errors.phone_number && touched.phone_number
+                            ? "border-red-500"
+                            : "border-[#D2D2D7]"
+                        }`}
+                      />
                     </div>
+                    <ErrorMessage
+                      name="phone_number"
+                      component="div"
+                      className="text-red-500 text-xs mt-1"
+                    />
                   </div>
 
-                  <Formik
-                    initialValues={{ phone_number: order.phone_number || "" }}
-                    validationSchema={validationSchema}
-                    onSubmit={async (values, { setSubmitting }) => {
-                      setPaymentMessage("Initiating M-PESA request...");
-                      try {
-                        const payload = {
-                          phone_number: parseInt(values.phone_number, 10),
-                          order_reference: reference,
-                        };
-                        await generateDepositSTKPush(payload);
-                        toast.success("Push sent! Check your phone.");
-                        setPaymentMessage("Action Required: Check your phone");
-                        pollPaymentStatus();
-                      } catch (error) {
-                        console.error(error);
-                        toast.error("Failed to initiate payment");
-                        setPaymentMessage("Failed to initiate. Please retry.");
-                      } finally {
-                        setSubmitting(false);
-                      }
-                    }}
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-[#e38109] hover:bg-[#df7f11]/90 text-white font-medium py-3.5 rounded-xl transition-colors flex justify-center items-center gap-2 disabled:opacity-50"
                   >
-                    {({ isSubmitting, errors, touched }) => (
-                      <Form className="space-y-8">
-                        <div>
-                          <label className="block text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-3">
-                            M-PESA Phone Number
-                          </label>
-                          <div className="relative">
-                            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                              <span className="text-foreground font-medium text-lg border-r border-secondary/30 pr-3 mr-1">
-                                +254
-                              </span>
-                            </div>
-                            <Field
-                              name="phone_number"
-                              type="tel"
-                              className="block w-full py-4 pl-20 pr-4 text-lg bg-secondary/5 border border-secondary/30 rounded-sm text-foreground placeholder-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-mono"
-                              placeholder="7XX XXX XXX"
-                            />
-                            {errors.phone_number && touched.phone_number && (
-                              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-red-500">
-                                <AlertCircle className="w-5 h-5" />
-                              </div>
-                            )}
-                          </div>
-                          {errors.phone_number && touched.phone_number && (
-                            <p className="mt-2 text-sm text-red-500 flex items-center gap-1 animate-pulse">
-                              {errors.phone_number}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Status / Instructions */}
-                        <div className="bg-secondary/10 rounded-sm p-4 border border-secondary/20">
-                          {isPolling || paymentMessage ? (
-                            <div className="flex flex-col gap-3">
-                              <div
-                                className={`flex items-center gap-3 font-medium ${paymentMessage.includes("Failed") ? "text-red-700" : "text-foreground"}`}
-                              >
-                                {isPolling && (
-                                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                                )}
-                                <span>{paymentMessage}</span>
-                              </div>
-                              {isPolling && (
-                                <div className="w-full bg-secondary/20 rounded-full h-1.5 overflow-hidden">
-                                  <div className="h-full bg-primary animate-progress-indeterminate" />
-                                </div>
-                              )}
-                              {isPolling && (
-                                <p className="text-sm text-muted-foreground">
-                                  Please enter your PIN on the M-PESA prompt
-                                  sent to your phone.
-                                </p>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="flex gap-4">
-                              <div className="flex flex-col gap-1 flex-1">
-                                <span className="text-xs font-bold text-primary uppercase">
-                                  Step 1
-                                </span>
-                                <span className="text-sm text-foreground">
-                                  Click &quot;Pay Now&quot; below
-                                </span>
-                              </div>
-                              <div className="w-px bg-secondary/20" />
-                              <div className="flex flex-col gap-1 flex-1">
-                                <span className="text-xs font-bold text-primary uppercase">
-                                  Step 2
-                                </span>
-                                <span className="text-sm text-foreground">
-                                  Enter PIN on your phone
-                                </span>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        <Button
-                          type="submit"
-                          disabled={isSubmitting || isPolling}
-                          className="w-full relative group overflow-hidden rounded-sm bg-foreground text-background py-4 transition-all hover:bg-black disabled:opacity-70 disabled:cursor-not-allowed"
-                        >
-                          <div className="relative z-10 flex items-center justify-center gap-2 font-medium text-lg">
-                            {isSubmitting ? (
-                              <Loader2 className="w-6 h-6 animate-spin" />
-                            ) : (
-                              <>
-                                <span>Pay Now</span>
-                                <span className="opacity-50">|</span>
-                                <span>
-                                  {formatCurrency(
-                                    parseFloat(order.total_amount),
-                                    currency,
-                                  )}
-                                </span>
-                              </>
-                            )}
-                          </div>
-                          <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                        </Button>
-
-                        <button
-                          type="button"
-                          onClick={() => refetch()}
-                          className="w-full text-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
-                        >
-                          I&apos;ve already completed payment
-                        </button>
-                      </Form>
+                    {loading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      "Pay Now via M-Pesa"
                     )}
-                  </Formik>
-                </>
-              ) : (
-                <div className="text-center py-10 flex flex-col items-center">
-                  <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 text-green-600 animate-in zoom-in duration-500 shadow-sm border-4 border-white">
-                    <CheckCircle2 className="w-10 h-10" />
-                  </div>
-                  <h2 className="text-3xl font-serif font-bold text-foreground mb-3">
-                    Payment Successful
-                  </h2>
-                  <p className="text-muted-foreground mb-8 max-w-sm">
-                    Thank you! Your order{" "}
-                    <strong>#{order.reference.toUpperCase()}</strong> has been
-                    confirmed.
-                  </p>
-                  <Link
-                    href="/orders"
-                    className="inline-flex items-center justify-center px-8 py-4 bg-primary text-primary-foreground rounded-sm font-bold transition-all hover:bg-primary/90 shadow-sm hover:shadow-md hover:-translate-y-0.5"
-                  >
-                    View My Orders
-                  </Link>
-                </div>
+                  </button>
+                </Form>
               )}
+            </Formik>
+          )}
 
-              <div className="mt-8 pt-6 border-t border-secondary/20 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Lock className="w-3 h-3" />
-                  <span>256-bit SSL Secured</span>
-                </div>
-                <div className="flex gap-2 opacity-50 grayscale">
-                  {/* Icons for payment providers just for trust visuals */}
-                  <div className="h-6 w-10 bg-secondary/20 rounded-sm" />
-                  <div className="h-6 w-10 bg-secondary/20 rounded-sm" />
-                </div>
-              </div>
+          {isPolling && (
+            <div className="flex flex-col items-center justify-center py-8 space-y-4">
+              <Loader2 className="w-10 h-10 text-[#db8010] animate-spin" />
+              <p className="text-sm text-gray-500 text-center max-w-xs">
+                Waiting for M-Pesa confirmation. This usually takes 10-20 seconds after you enter your PIN.
+              </p>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

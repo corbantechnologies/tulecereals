@@ -11,10 +11,13 @@ export interface Order {
   customer: string;
   pickup_station: string;
   pickup_station_name: string;
+  shipping_zone: string;
+  shipping_zone_name: string;
   delivery_cost: string;
   total_amount: string;
   phone_number: string;
   shipping_address: string;
+  delivery_type: string;
   status: string;
   created_at: string;
   updated_at: string;
@@ -30,6 +33,7 @@ export interface Order {
   items: OrderItem[];
   shop_orders: ShopOrder[];
 }
+
 
 export interface OrderItem {
   id: string;

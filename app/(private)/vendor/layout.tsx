@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import VendorNavbar from "@/components/vendor/Navbar";
 import { useFetchAccount } from "@/hooks/accounts/actions";
@@ -16,16 +16,20 @@ export default function VendorLayout({
   const { data: session, status } = useSession();
   const { data: vendor, isLoading, isError } = useFetchAccount();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
     } else if (status === "authenticated" && !isLoading && vendor) {
-      if (!vendor.is_vendor && !vendor.is_superuser) {
-        // If loaded and NOT a vendor, redirect or show message.
-        // Redirecting to login might be confusing if they are logged in as a customer.
-        // But per requirements, they shouldn't be here.
+      const isAllowed = vendor.is_vendor || vendor.is_superuser || vendor.is_pos_staff;
+      
+      if (!isAllowed) {
+        // Not a vendor, superuser, or POS staff
         router.push("/login");
+      } else if (vendor.is_pos_staff && !vendor.is_vendor && !vendor.is_superuser) {
+        // Strictly POS staff - restrict to POS root
+        router.push("/pos/register");
       }
     }
   }, [status, vendor, isLoading, router]);
@@ -55,14 +59,20 @@ export default function VendorLayout({
     );
   }
 
-  if (!vendor?.is_vendor && !vendor?.is_superuser) {
+  const isAllowed = vendor?.is_vendor || vendor?.is_superuser || vendor?.is_pos_staff;
+  if (!isAllowed) {
+    return null;
+  }
+
+  // If strictly POS staff redirect handles this, but just in case
+  if (vendor?.is_pos_staff && !vendor?.is_vendor && !vendor?.is_superuser) {
     return null;
   }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <VendorNavbar />
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <ProfileOnboarding vendorShop={vendor.shop} />
         {children}
       </main>
