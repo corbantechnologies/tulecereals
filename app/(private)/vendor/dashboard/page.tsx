@@ -5,6 +5,7 @@ import { useFetchAccount } from "@/hooks/accounts/actions";
 import { useFetchCategoriesVendor } from "@/hooks/categories/actions";
 import { useFetchSubCategoriesVendor } from "@/hooks/subcategories/actions";
 import { useFetchPickupStationsVendor } from "@/hooks/pickupstations/actions";
+import { useFetchShippingZonesVendor } from "@/hooks/shippingzones/actions";
 import { useFetchShop } from "@/hooks/shops/actions";
 import {
   LayoutGrid,
@@ -15,6 +16,8 @@ import {
   Package,
   Plus,
   Edit,
+  Truck,
+  BarChart3,
 } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import SectionHeader from "@/components/dashboard/SectionHeader";
@@ -27,8 +30,11 @@ import CreateSubCategory from "@/forms/subcategories/CreateSubCategory";
 import UpdateSubCategory from "@/forms/subcategories/UpdateSubCategory";
 import CreatePickupStation from "@/forms/pickupstations/CreatePickupStation";
 import UpdatePickupStation from "@/forms/pickupstations/UpdatePickupStation";
+import CreateShippingZone from "@/forms/shippingzones/CreateShippingZone";
+import UpdateShippingZone from "@/forms/shippingzones/UpdateShippingZone";
 import UpdateShopForm from "@/forms/shop/UpdateShop";
 import { useFetchProductsVendor } from "@/hooks/products/actions";
+import AnalyticsTab from "@/components/vendor/dashboard/AnalyticsTab";
 
 // --- Main Page ---
 
@@ -46,6 +52,8 @@ export default function VendorDashboard() {
     useState(false);
   const [isUpdatePickupStationModalOpen, setIsUpdatePickupStationModalOpen] =
     useState(false);
+  const [isShippingZoneModalOpen, setIsShippingZoneModalOpen] = useState(false);
+  const [isUpdateShippingZoneModalOpen, setIsUpdateShippingZoneModalOpen] = useState(false);
   const [isShopUpdateModalOpen, setIsShopUpdateModalOpen] = useState(false);
 
   // Selected Item States
@@ -55,6 +63,7 @@ export default function VendorDashboard() {
     useState("");
   const [selectedPickupStationCode, setSelectedPickupStationCode] =
     useState("");
+  const [selectedShippingZoneCode, setSelectedShippingZoneCode] = useState("");
 
   const { data: vendor, isLoading: isLoadingVendor } = useFetchAccount();
   const {
@@ -73,6 +82,11 @@ export default function VendorDashboard() {
     refetch: refetchPickupStations,
   } = useFetchPickupStationsVendor();
   const {
+    data: shippingZones,
+    isLoading: isLoadingShippingZones,
+    refetch: refetchShippingZones,
+  } = useFetchShippingZonesVendor();
+  const {
     data: products,
     isLoading: isLoadingProducts,
     refetch: refetchProducts,
@@ -84,9 +98,11 @@ export default function VendorDashboard() {
 
   const tabs = [
     { id: "overview", label: "Overview", icon: TrendingUp },
+    { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "categories", label: "Categories", icon: LayoutGrid },
     { id: "subcategories", label: "Subcategories", icon: ListTree },
     { id: "pickup-stations", label: "Pickup Stations", icon: MapPin },
+    { id: "shipping-zones", label: "Shipping Zones", icon: Truck },
   ];
 
   const stats = [
@@ -109,6 +125,12 @@ export default function VendorDashboard() {
       loading: isLoadingPickupStations,
     },
     {
+      title: "Shipping Zones",
+      value: shippingZones?.length || 0,
+      icon: Truck,
+      loading: isLoadingShippingZones,
+    },
+    {
       title: "Products",
       value: products?.length || 0,
       icon: Package,
@@ -117,17 +139,17 @@ export default function VendorDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-12">
+    <div className="min-h-screen bg-[#F5F5F7]">
+      <div className="w-full max-w-[1920px] mx-auto px-4 sm:px-6 py-6 md:py-12">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 md:gap-8 mb-8 md:mb-12">
           <div className="flex-1">
-            <span className="text-[10px] md:text-xs uppercase tracking-[0.2em] text-primary mb-2 block font-medium">
+            <span className="text-xs font-semibold text-[#e8a808] uppercase tracking-widest mb-2 block">
               Vendor Portal
             </span>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif text-foreground leading-tight">
-              Welcome back, <br className="hidden sm:block" />
-              <span className="italic text-primary">
+            <h1 className="text-3xl sm:text-4xl font-bold text-[#1D1D1F] tracking-tight">
+              Welcome back,{" "}
+              <span className="text-[#e39b00]">
                 {vendor?.first_name || "Merchant"}
               </span>
             </h1>
@@ -143,23 +165,19 @@ export default function VendorDashboard() {
           </div>
         </div>
 
-        {/* Tabs Navigation */}
-        <div className="flex overflow-x-auto pb-4 mb-8 border-b border-secondary/20 gap-8 no-scrollbar">
+        {/* Tabs */}
+        <div className="flex overflow-x-auto pb-0 mb-8 gap-1 hide-scrollbar">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 pb-4 text-sm font-medium transition-all relative whitespace-nowrap ${
-                activeTab === tab.id
-                  ? "text-primary transition-colors"
-                  : "text-foreground/40 hover:text-foreground/70"
-              }`}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all whitespace-nowrap ${activeTab === tab.id
+                ? "bg-[#de9205] text-white shadow-md shadow-[#0071E3]/20"
+                : "text-[#6E6E73] hover:bg-white hover:text-[#1D1D1F]"
+                }`}
             >
               <tab.icon className="w-4 h-4" />
               {tab.label}
-              {activeTab === tab.id && (
-                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary animate-in fade-in slide-in-from-bottom-1" />
-              )}
             </button>
           ))}
         </div>
@@ -176,15 +194,15 @@ export default function VendorDashboard() {
               </div>
 
               {/* Shop Information */}
-              <div className="bg-white border border-secondary/30 rounded-sm overflow-hidden shadow-sm">
-                <div className="p-6 border-b border-secondary/20 bg-secondary/5 flex justify-between items-center">
-                  <h3 className="font-serif text-lg text-foreground flex items-center gap-2">
-                    <UserIcon className="w-5 h-5 text-primary" />
+              <div className="bg-white border border-[#D2D2D7] rounded-2xl overflow-hidden">
+                <div className="px-5 py-4 border-b border-[#F5F5F7] bg-[#FAFAFA] flex justify-between items-center">
+                  <h3 className="text-sm font-bold text-[#1D1D1F] flex items-center gap-2">
+                    <UserIcon className="w-4 h-4 text-[#de9709]" />
                     Shop Profile
                   </h3>
                   <button
                     onClick={() => setIsShopUpdateModalOpen(true)}
-                    className="text-xs flex items-center gap-1 text-primary hover:text-primary/80 transition-colors"
+                    className="flex items-center gap-1.5 text-xs font-semibold text-[#de9a06] hover:text-[#e89906] transition-colors"
                   >
                     <Edit className="w-3 h-3" />
                     Edit Details
@@ -192,48 +210,21 @@ export default function VendorDashboard() {
                 </div>
                 <div className="p-6 sm:p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                   {[
-                    {
-                      label: "Shop Name",
-                      value: shopData?.name || vendor?.shop?.name || "N/A",
-                    },
-                    {
-                      label: "Shop Email",
-                      value: shopData?.email || vendor?.shop?.email || "N/A",
-                    },
-                    {
-                      label: "Shop Code",
-                      value:
-                        shopData?.shop_code || vendor?.shop?.shop_code || "N/A",
-                    },
-                    {
-                      label: "Country",
-                      value:
-                        shopData?.country || vendor?.shop?.country || "N/A",
-                    },
-                    {
-                      label: "Registration Date",
-                      value: shopData?.created_at
-                        ? formatDate(shopData.created_at)
-                        : vendor?.shop?.created_at
-                          ? formatDate(vendor.shop.created_at)
-                          : "N/A",
-                    },
-                    {
-                      label: "Reference ID",
-                      value:
-                        shopData?.reference || vendor?.shop?.reference || "N/A",
-                    },
+                    { label: "Shop Name", value: shopData?.name || vendor?.shop?.name || "N/A" },
+                    { label: "Shop Email", value: shopData?.email || vendor?.shop?.email || "N/A" },
+                    { label: "Shop Code", value: shopData?.shop_code || vendor?.shop?.shop_code || "N/A" },
+                    { label: "Country", value: shopData?.country || vendor?.shop?.country || "N/A" },
+                    { label: "Registration Date", value: shopData?.created_at ? formatDate(shopData.created_at) : vendor?.shop?.created_at ? formatDate(vendor.shop.created_at) : "N/A" },
+                    { label: "Reference ID", value: shopData?.reference || vendor?.shop?.reference || "N/A" },
                   ].map((field, i) => (
                     <div key={i}>
-                      <p className="text-[10px] uppercase tracking-widest text-foreground/40 mb-1">
+                      <p className="text-[10px] uppercase tracking-widest text-[#86868B] font-semibold mb-1">
                         {field.label}
                       </p>
                       {isLoadingVendor ? (
-                        <div className="h-5 w-3/4 bg-secondary/10 animate-pulse rounded-sm" />
+                        <div className="h-5 w-3/4 bg-[#F5F5F7] animate-pulse rounded-lg" />
                       ) : (
-                        <p className="text-foreground font-medium">
-                          {field.value}
-                        </p>
+                        <p className="text-[#1D1D1F] font-semibold text-sm">{field.value}</p>
                       )}
                     </div>
                   ))}
@@ -242,60 +233,45 @@ export default function VendorDashboard() {
             </div>
           )}
 
+          {activeTab === "analytics" && <AnalyticsTab />}
+
           {activeTab === "categories" && (
             <div className="animate-in fade-in duration-500">
-              <div className="flex justify-between items-start md:items-center mb-6">
+              <div className="flex justify-between items-start md:items-center mb-4">
                 <SectionHeader
-                  title="Categories Management"
+                  title="Categories"
                   description="Manage your product categories and their visibility."
                 />
                 <button
                   onClick={() => setIsCategoryModalOpen(true)}
-                  className="inline-flex items-center justify-center rounded-sm bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#e09b06] px-4 py-2 text-sm font-semibold text-white hover:bg-[#e18308] transition-all shadow-md shadow-[#0071E3]/20"
                 >
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus className="h-4 w-4" />
                   Add Category
                 </button>
               </div>
-              <div className="bg-white border border-secondary/30 rounded-sm overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
+              <div className="bg-white border border-[#D2D2D7] rounded-2xl overflow-hidden">
+                <div className="overflow-x-auto hidden sm:block">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-secondary/5 border-b border-secondary/20">
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-[0.2em] font-serif text-primary">
-                          Name
-                        </th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-[0.2em] font-serif text-primary">
-                          Reference
-                        </th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-[0.2em] font-serif text-primary">
-                          Status
-                        </th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-[0.2em] font-serif text-primary">
-                          Subcategories
-                        </th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-[0.2em] font-serif text-primary">
-                          Actions
-                        </th>
+                      <tr className="bg-[#F5F5F7] border-b border-[#D2D2D7]">
+                        <th className="px-6 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[#e58b16]">Name</th>
+                        <th className="px-6 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[#e58b16]">Reference</th>
+                        <th className="px-6 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[#e58b16]">Status</th>
+                        <th className="px-6 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[#e58b16]">Subcategories</th>
+                        <th className="px-6 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[#e58b16]">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-secondary/10">
+                    <tbody className="divide-y divide-[#F5F5F7]">
                       {isLoadingCategories ? (
                         Array(3)
                           .fill(0)
                           .map((_, i) => <SkeletonRow key={i} />)
                       ) : categories && categories.length > 0 ? (
                         categories.map((cat) => (
-                          <tr
-                            key={cat.reference}
-                            className="hover:bg-secondary/5 transition-colors group"
-                          >
-                            <td className="px-6 py-4 font-medium text-foreground">
-                              {cat.name}
-                            </td>
-                            <td className="px-6 py-4 text-xs font-mono text-foreground/50">
-                              {cat.reference}
-                            </td>
+                          <tr key={cat.reference} className="hover:bg-[#F5F5F7] transition-colors">
+                            <td className="px-6 py-4 text-sm font-semibold text-[#1D1D1F]">{cat.name}</td>
+                            <td className="px-6 py-4 text-xs font-mono text-[#86868B]">{cat.reference}</td>
                             <td className="px-6 py-4">
                               <span
                                 className={`px-2 py-0.5 rounded-full text-[10px] uppercase tracking-tighter ${cat.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
@@ -303,17 +279,11 @@ export default function VendorDashboard() {
                                 {cat.is_active ? "Active" : "Inactive"}
                               </span>
                             </td>
-                            <td className="px-6 py-4 text-sm text-foreground/60">
-                              {cat.subcategories.length} items
-                            </td>
+                            <td className="px-6 py-4 text-sm text-[#6E6E73]">{cat.subcategories.length} items</td>
                             <td className="px-6 py-4">
                               <button
-                                onClick={() => {
-                                  setSelectedCategoryReference(cat.reference);
-                                  setIsUpdateCategoryModalOpen(true);
-                                }}
-                                className="text-foreground/50 hover:text-primary transition-colors"
-                                title="Edit Category"
+                                onClick={() => { setSelectedCategoryReference(cat.reference); setIsUpdateCategoryModalOpen(true); }}
+                                className="text-[#86868B] hover:text-[#e39d06] transition-colors"
                               >
                                 <Edit className="w-4 h-4" />
                               </button>
@@ -322,16 +292,57 @@ export default function VendorDashboard() {
                         ))
                       ) : (
                         <tr>
-                          <td
-                            colSpan={4}
-                            className="px-6 py-12 text-center text-foreground/40 italic"
-                          >
-                            No categories found.
+                          <td colSpan={5} className="px-6 py-16">
+                            <div className="flex flex-col items-center justify-center gap-3 text-center">
+                              <div className="w-12 h-12 bg-[#F5F5F7] rounded-2xl border border-[#D2D2D7] flex items-center justify-center">
+                                <LayoutGrid className="w-5 h-5 text-[#D2D2D7]" />
+                              </div>
+                              <p className="text-sm font-semibold text-[#1D1D1F]">No categories yet</p>
+                              <p className="text-xs text-[#86868B]">Create your first category to organise your tech products.</p>
+                            </div>
                           </td>
                         </tr>
                       )}
                     </tbody>
                   </table>
+                </div>
+
+                {/* Mobile Categories View - Card based */}
+                <div className="sm:hidden divide-y divide-[#F5F5F7]">
+                  {isLoadingCategories ? (
+                    Array(3).fill(0).map((_, i) => (
+                      <div key={i} className="p-4 flex gap-4 animate-pulse">
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 bg-[#F5F5F7] rounded w-1/2" />
+                          <div className="h-3 bg-[#F5F5F7] rounded w-1/4" />
+                        </div>
+                      </div>
+                    ))
+                  ) : categories && categories.length > 0 ? (
+                    categories.map((cat) => (
+                      <div key={cat.reference} className="p-4 flex justify-between items-center">
+                        <div className="min-w-0 pr-4">
+                          <p className="font-semibold text-[#1D1D1F] text-sm truncate">{cat.name}</p>
+                          <p className="text-[10px] text-[#86868B] mt-0.5">{cat.subcategories.length} subcategories</p>
+                        </div>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase tracking-tighter ${cat.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                            {cat.is_active ? "Active" : "Inactive"}
+                          </span>
+                          <button
+                            onClick={() => { setSelectedCategoryReference(cat.reference); setIsUpdateCategoryModalOpen(true); }}
+                            className="p-2 text-[#86868B] hover:text-[#e3aa00] hover:bg-[#0071E3]/5 rounded-lg transition-colors"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-12 text-center">
+                      <p className="text-sm text-[#86868B]">No categories yet</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -339,58 +350,41 @@ export default function VendorDashboard() {
 
           {activeTab === "subcategories" && (
             <div className="animate-in fade-in duration-500">
-              <div className="flex justify-between items-start md:items-center mb-6">
+              <div className="flex justify-between items-start md:items-center mb-4">
                 <SectionHeader
-                  title="Subcategories Overview"
+                  title="Subcategories"
                   description="Deep dive into your product sub-classifications."
                 />
                 <button
                   onClick={() => setIsSubCategoryModalOpen(true)}
-                  className="inline-flex items-center justify-center rounded-sm bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#dd9309] px-4 py-2 text-sm font-semibold text-white hover:bg-[#dc810a] transition-all shadow-md shadow-[#0071E3]/20"
                 >
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus className="h-4 w-4" />
                   Add Subcategory
                 </button>
               </div>
-              <div className="bg-white border border-secondary/30 rounded-sm overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
+              <div className="bg-white border border-[#D2D2D7] rounded-2xl overflow-hidden">
+                <div className="overflow-x-auto hidden sm:block">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-secondary/5 border-b border-secondary/20">
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-[0.2em] font-serif text-primary">
-                          Name
-                        </th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-[0.2em] font-serif text-primary">
-                          Parent Category
-                        </th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-[0.2em] font-serif text-primary">
-                          Status
-                        </th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-[0.2em] font-serif text-primary">
-                          Created
-                        </th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-[0.2em] font-serif text-primary">
-                          Actions
-                        </th>
+                      <tr className="bg-[#F5F5F7] border-b border-[#D2D2D7]">
+                        <th className="px-6 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[#e58b16]">Name</th>
+                        <th className="px-6 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[#e58b16]">Parent Category</th>
+                        <th className="px-6 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[#e58b16]">Status</th>
+                        <th className="px-6 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[#e58b16]">Created</th>
+                        <th className="px-6 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[#e58b16]">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-secondary/10">
+                    <tbody className="divide-y divide-[#F5F5F7]">
                       {isLoadingSubcategories ? (
                         Array(3)
                           .fill(0)
                           .map((_, i) => <SkeletonRow key={i} />)
                       ) : subcategories && subcategories.length > 0 ? (
                         subcategories.map((sub) => (
-                          <tr
-                            key={sub.reference}
-                            className="hover:bg-secondary/5 transition-colors border-b border-secondary/10"
-                          >
-                            <td className="px-6 py-4 font-medium text-foreground">
-                              {sub.name || "N/A"}
-                            </td>
-                            <td className="px-6 py-4 text-xs font-mono text-foreground/50">
-                              {sub.category}
-                            </td>
+                          <tr key={sub.reference} className="hover:bg-[#F5F5F7] transition-colors">
+                            <td className="px-6 py-4 text-sm font-semibold text-[#1D1D1F]">{sub.name || "N/A"}</td>
+                            <td className="px-6 py-4 text-xs font-mono text-[#86868B]">{sub.category}</td>
                             <td className="px-6 py-4">
                               <span
                                 className={`px-2 py-0.5 rounded-full text-[10px] uppercase tracking-tighter ${sub.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
@@ -398,19 +392,11 @@ export default function VendorDashboard() {
                                 {sub.is_active ? "Active" : "Inactive"}
                               </span>
                             </td>
-                            <td className="px-6 py-4 text-xs text-foreground/60">
-                              {formatDate(sub.created_at)}
-                            </td>
+                            <td className="px-6 py-4 text-xs text-[#86868B]">{formatDate(sub.created_at)}</td>
                             <td className="px-6 py-4">
                               <button
-                                onClick={() => {
-                                  setSelectedSubCategoryReference(
-                                    sub.reference,
-                                  );
-                                  setIsUpdateSubCategoryModalOpen(true);
-                                }}
-                                className="text-foreground/50 hover:text-primary transition-colors"
-                                title="Edit Subcategory"
+                                onClick={() => { setSelectedSubCategoryReference(sub.reference); setIsUpdateSubCategoryModalOpen(true); }}
+                                className="text-[#86868B] hover:text-[#e39308] transition-colors"
                               >
                                 <Edit className="w-4 h-4" />
                               </button>
@@ -419,16 +405,58 @@ export default function VendorDashboard() {
                         ))
                       ) : (
                         <tr>
-                          <td
-                            colSpan={4}
-                            className="px-6 py-12 text-center text-foreground/40 italic"
-                          >
-                            No subcategories found.
+                          <td colSpan={5} className="px-6 py-16">
+                            <div className="flex flex-col items-center justify-center gap-3 text-center">
+                              <div className="w-12 h-12 bg-[#F5F5F7] rounded-2xl border border-[#D2D2D7] flex items-center justify-center">
+                                <ListTree className="w-5 h-5 text-[#D2D2D7]" />
+                              </div>
+                              <p className="text-sm font-semibold text-[#1D1D1F]">No subcategories yet</p>
+                              <p className="text-xs text-[#86868B]">Add subcategories to further organise your gear.</p>
+                            </div>
                           </td>
                         </tr>
                       )}
                     </tbody>
                   </table>
+                </div>
+
+                {/* Mobile Subcategories View - Card based */}
+                <div className="sm:hidden divide-y divide-[#F5F5F7]">
+                  {isLoadingSubcategories ? (
+                    Array(3).fill(0).map((_, i) => (
+                      <div key={i} className="p-4 flex gap-4 animate-pulse">
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 bg-[#F5F5F7] rounded w-1/2" />
+                          <div className="h-3 bg-[#F5F5F7] rounded w-1/4" />
+                        </div>
+                      </div>
+                    ))
+                  ) : subcategories && subcategories.length > 0 ? (
+                    subcategories.map((sub) => (
+                      <div key={sub.reference} className="p-4 space-y-2">
+                        <div className="flex justify-between items-start">
+                          <div className="min-w-0 pr-4">
+                            <p className="font-semibold text-[#1D1D1F] text-sm truncate">{sub.name || "N/A"}</p>
+                            <p className="text-[10px] text-[#86868B] mt-0.5">Parent: {sub.category}</p>
+                          </div>
+                          <button
+                            onClick={() => { setSelectedSubCategoryReference(sub.reference); setIsUpdateSubCategoryModalOpen(true); }}
+                            className="p-2 text-[#86868B] hover:text-[#dd9308] hover:bg-[#0071E3]/5 rounded-lg transition-colors"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div className="flex justify-between items-center text-[10px]">
+                          <span className={`px-2 py-0.5 rounded-full uppercase tracking-tighter ${sub.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                            {sub.is_active ? "Active" : "Inactive"}
+                          </span>
+                          <span className="text-[#86868B] font-medium">{formatDate(sub.created_at)}</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-12 text-center text-sm text-[#86868B]">No subcategories yet.</div>
+                  )}
                 </div>
               </div>
             </div>
@@ -436,54 +464,42 @@ export default function VendorDashboard() {
 
           {activeTab === "pickup-stations" && (
             <div className="animate-in fade-in duration-500">
-              <div className="flex justify-between items-start md:items-center mb-6">
-                <SectionHeader
-                  title="Pickup Stations"
-                  description="Customer delivery points and their operational status."
-                />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-[#1D1D1F] tracking-tight">Pickup Stations</h2>
+                  <p className="text-[#86868B] text-sm mt-1">Manage your delivery network and collection points.</p>
+                </div>
                 {vendor?.is_superuser && (
                   <button
                     onClick={() => setIsPickupStationModalOpen(true)}
-                    className="inline-flex items-center justify-center rounded-sm bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                    className="flex items-center justify-center px-6 py-2.5 bg-[#e5a207] text-white rounded-xl text-sm font-bold hover:bg-[#e58e0b] transition-all shadow-md shadow-[#0071E3]/20"
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     Add Station
                   </button>
                 )}
               </div>
-              <div className="bg-white border border-secondary/30 rounded-sm overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
+              <div className="bg-white border border-[#D2D2D7] rounded-2xl overflow-hidden">
+                <div className="overflow-x-auto hidden sm:block">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-secondary/5 border-b border-secondary/20">
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-[0.2em] font-serif text-primary">
-                          Station Name
-                        </th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-[0.2em] font-serif text-primary">
-                          Location
-                        </th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-[0.2em] font-serif text-primary">
-                          Delivery Cost
-                        </th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-[0.2em] font-serif text-primary">
-                          Status
-                        </th>
-                        <th className="px-6 py-4 text-[10px] uppercase tracking-[0.2em] font-serif text-primary">
-                          Actions
-                        </th>
+                      <tr className="bg-[#F5F5F7] border-b border-[#D2D2D7]">
+                        <th className="px-6 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[#e58b16]">Station Name</th>
+                        <th className="px-6 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[#e58b16]">Location</th>
+                        <th className="px-6 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[#e58b16]">Delivery Cost</th>
+                        <th className="px-6 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[#e58b16]">ETA</th>
+                        <th className="px-6 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[#e58b16]">Status</th>
+                        <th className="px-6 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[#e58b16]">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-secondary/10">
+                    <tbody className="divide-y divide-[#F5F5F7]">
                       {isLoadingPickupStations ? (
                         Array(3)
                           .fill(0)
                           .map((_, i) => <SkeletonRow key={i} />)
                       ) : pickupStations && pickupStations.length > 0 ? (
                         pickupStations.map((station) => (
-                          <tr
-                            key={station.reference}
-                            className="hover:bg-secondary/5 transition-colors"
-                          >
+                          <tr key={station.reference} className="hover:bg-[#F5F5F7] transition-colors">
                             <td className="px-6 py-4">
                               <div>
                                 <p className="font-medium text-foreground">
@@ -507,6 +523,9 @@ export default function VendorDashboard() {
                             <td className="px-6 py-4 text-sm font-medium text-foreground">
                               {vendor?.shop?.currency || "$"}{" "}
                               {station.cost_to_customer}
+                            </td>
+                            <td className="px-6 py-4 text-sm font-medium text-foreground">
+                              {station.estimated_delivery_days}
                             </td>
                             <td className="px-6 py-4">
                               <span
@@ -535,11 +554,151 @@ export default function VendorDashboard() {
                         ))
                       ) : (
                         <tr>
-                          <td
-                            colSpan={4}
-                            className="px-6 py-12 text-center text-foreground/40 italic"
-                          >
-                            No pickup stations found.
+                          <td colSpan={5} className="px-6 py-16">
+                            <div className="flex flex-col items-center justify-center gap-3 text-center">
+                              <div className="w-12 h-12 bg-[#F5F5F7] rounded-2xl border border-[#D2D2D7] flex items-center justify-center">
+                                <MapPin className="w-5 h-5 text-[#D2D2D7]" />
+                              </div>
+                              <p className="text-sm font-semibold text-[#1D1D1F]">No pickup stations yet</p>
+                              <p className="text-xs text-[#86868B]">Add pickup stations to offer delivery options to customers.</p>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Pickup Stations View - Card based */}
+                <div className="sm:hidden divide-y divide-[#F5F5F7]">
+                  {isLoadingPickupStations ? (
+                    Array(3).fill(0).map((_, i) => (
+                      <div key={i} className="p-4 flex gap-4 animate-pulse">
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 bg-[#F5F5F7] rounded w-1/2" />
+                          <div className="h-3 bg-[#F5F5F7] rounded w-1/4" />
+                        </div>
+                      </div>
+                    ))
+                  ) : pickupStations && pickupStations.length > 0 ? (
+                    pickupStations.map((station) => (
+                      <div key={station.reference} className="p-4 space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-semibold text-[#1D1D1F] text-sm">{station.name}</p>
+                            <p className="text-[10px] text-[#86868B]">{station.city}, {station.location}</p>
+                          </div>
+                          {vendor?.is_superuser && (
+                            <button
+                              onClick={() => {
+                                setSelectedPickupStationCode(station.station_code);
+                                setIsUpdatePickupStationModalOpen(true);
+                              }}
+                              className="p-2 text-[#86868B] hover:text-[#d6880b] hover:bg-[#0071E3]/5 rounded-lg transition-colors"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex justify-between items-center bg-[#F5F5F7] p-3 rounded-xl border border-[#D2D2D7]">
+                          <div className="flex flex-col">
+                            <span className="text-[9px] uppercase tracking-widest text-[#86868B] font-semibold mb-0.5">Delivery Cost</span>
+                            <span className="text-xs font-bold text-[#1D1D1F]">{vendor?.shop?.currency || "$"}{station.cost_to_customer}</span>
+                          </div>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase tracking-tighter ${station.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                            {station.is_active ? "Active" : "Inactive"}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-full flex flex-col items-center justify-center py-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                      <div className="w-16 h-16 rounded-2xl bg-[#F5F5F7] border border-[#D2D2D7] flex items-center justify-center mb-4">
+                        <MapPin className="w-8 h-8 text-[#86868B]" />
+                      </div>
+                      <p className="text-lg font-bold text-[#1D1D1F]">No pickup stations yet</p>
+                      <p className="text-sm text-[#86868B] mt-1 max-w-xs text-center">Add pickup stations to offer convenient delivery options to your customers.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {activeTab === "shipping-zones" && (
+            <div className="animate-in fade-in duration-500">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-[#1D1D1F] tracking-tight">Shipping Zones</h2>
+                  <p className="text-[#86868B] text-sm mt-1">Configure regional delivery routes and costs.</p>
+                </div>
+                {vendor?.is_superuser && (
+                  <button
+                    onClick={() => setIsShippingZoneModalOpen(true)}
+                    className="flex items-center justify-center px-6 py-2.5 bg-[#d49008] text-white rounded-xl text-sm font-bold hover:bg-[#e47e09] transition-all shadow-md shadow-[#0071E3]/20"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Zone
+                  </button>
+                )}
+              </div>
+              <div className="bg-white border border-[#D2D2D7] rounded-2xl overflow-hidden">
+                <div className="overflow-x-auto hidden sm:block">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-[#F5F5F7] border-b border-[#D2D2D7]">
+                        <th className="px-6 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[#e58b16]">Zone Name</th>
+                        <th className="px-6 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[#e58b16]">Code</th>
+                        <th className="px-6 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[#e58b16]">Delivery Cost</th>
+                        <th className="px-6 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[#e58b16]">ETA</th>
+                        <th className="px-6 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[#e58b16]">Status</th>
+                        <th className="px-6 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[#e58b16]">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#F5F5F7]">
+                      {isLoadingShippingZones ? (
+                        Array(3)
+                          .fill(0)
+                          .map((_, i) => <SkeletonRow key={i} />)
+                      ) : shippingZones && shippingZones.length > 0 ? (
+                        shippingZones.map((zone) => (
+                          <tr key={zone.zone_code} className="hover:bg-[#F5F5F7] transition-colors">
+                            <td className="px-6 py-4">
+                              <p className="font-semibold text-[#1D1D1F] text-sm">{zone.name}</p>
+                              <p className="text-[10px] text-[#86868B] truncate max-w-[200px]">{zone.description}</p>
+                            </td>
+                            <td className="px-6 py-4 text-xs font-mono text-[#86868B]">{zone.zone_code}</td>
+                            <td className="px-6 py-4 text-sm font-medium text-[#1D1D1F]">
+                              {vendor?.shop?.currency || "$"}{zone.delivery_cost}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-[#6E6E73]">{zone.estimated_delivery_days} days</td>
+                            <td className="px-6 py-4">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase tracking-tighter ${zone.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                                {zone.is_active ? "Active" : "Inactive"}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              {vendor?.is_superuser && (
+                                <button
+                                  onClick={() => { setSelectedShippingZoneCode(zone.zone_code); setIsUpdateShippingZoneModalOpen(true); }}
+                                  className="text-[#86868B] hover:text-[#da7f10] transition-colors"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={6} className="px-6 py-20 text-center">
+                            <div className="flex flex-col items-center justify-center py-10">
+                              <div className="w-16 h-16 rounded-2xl bg-[#F5F5F7] border border-[#D2D2D7] flex items-center justify-center mb-4">
+                                <Truck className="w-8 h-8 text-[#86868B]" />
+                              </div>
+                              <p className="text-lg font-bold text-[#1D1D1F]">No shipping zones yet</p>
+                              <p className="text-sm text-[#86868B] mt-1 max-w-sm">Configure regional delivery routes and their associated costs for your customers.</p>
+                            </div>
                           </td>
                         </tr>
                       )}
@@ -650,6 +809,37 @@ export default function VendorDashboard() {
               onSuccess={() => {
                 setIsUpdatePickupStationModalOpen(false);
                 refetchPickupStations();
+              }}
+            />
+          )}
+        </VendorModal>
+
+        <VendorModal
+          isOpen={isShippingZoneModalOpen}
+          onClose={() => setIsShippingZoneModalOpen(false)}
+          title="Create New Shipping Zone"
+        >
+          <CreateShippingZone
+            currency={vendor?.shop?.currency || "$"}
+            onSuccess={() => {
+              setIsShippingZoneModalOpen(false);
+              refetchShippingZones();
+            }}
+          />
+        </VendorModal>
+
+        <VendorModal
+          isOpen={isUpdateShippingZoneModalOpen}
+          onClose={() => setIsUpdateShippingZoneModalOpen(false)}
+          title="Update Shipping Zone"
+        >
+          {selectedShippingZoneCode && (
+            <UpdateShippingZone
+              zone_code={selectedShippingZoneCode}
+              currency={vendor?.shop?.currency || "$"}
+              onSuccess={() => {
+                setIsUpdateShippingZoneModalOpen(false);
+                refetchShippingZones();
               }}
             />
           )}

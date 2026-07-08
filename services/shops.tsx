@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 "use client";
 
 import { Category } from "./categories";
@@ -27,9 +27,9 @@ export interface Shop {
   return_policy: string;
   shipping_policy: string;
   refund_policy: string;
+  tax_rate: string;
+  loyalty_points_per_unit: number;
   categories: Category[];
-  tax_rate?: string;
-  loyalty_points_per_unit?: number;
 }
 
 export interface updateShop {
@@ -48,6 +48,8 @@ export interface updateShop {
   return_policy: string;
   shipping_policy: string;
   refund_policy: string;
+  tax_rate?: string;
+  loyalty_points_per_unit?: number;
 }
 
 export const getShops = async (): Promise<Shop[]> => {
